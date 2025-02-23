@@ -33,7 +33,7 @@ public class BluetoothDeviceDialog extends Dialog {
     }
 
     public BluetoothDeviceDialog(@NonNull Context context, List<BluetoothDevice> devices, OnDeviceSelectedListener listener) {
-        super(context);
+        super(context, R.style.DialogTheme);
         this.devices = new ArrayList<>(devices);
         this.listener = listener;
     }
