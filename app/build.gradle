@@ -1,0 +1,98 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.wenshi'
+    compileSdk 34
+
+
+
+    defaultConfig {
+        applicationId "com.example.wenshi"
+        minSdk 26
+        targetSdk 33
+        versionCode 1
+        versionName "yian3.0"
+
+        // Room schema configuration
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += [
+                        "room.schemaLocation": "$projectDir/schemas",
+                        "room.incremental": "true",
+                        "room.expandProjection": "true"
+                ]
+            }
+        }
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // 混淆后的应用程序更小更安全
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            debuggable true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    // 启用视图绑定
+    buildFeatures {
+        viewBinding true
+    }
+
+    // 配置 NDK
+    ndkVersion "25.1.8937393"
+}
+
+dependencies {
+    // 定义版本常量
+    def room_version = "2.6.1"
+    def lifecycle_version = "2.6.2"
+
+    // AndroidX 核心库
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.core:core:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // Room 数据库
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+
+    // Lifecycle components
+    implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-livedata:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
+
+    // MPAndroidChart 图表库
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
+    // 测试依赖
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+// 配置 Java 编译选项
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
