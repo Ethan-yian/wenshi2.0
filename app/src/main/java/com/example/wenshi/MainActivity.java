@@ -337,34 +337,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showBluetoothDeviceDialog() {
-        if (!permissionsGranted || bluetoothAdapter == null) {
-            return;
-        }
+        try {
+            if (!permissionsGranted || bluetoothAdapter == null) {
+                Toast.makeText(this, "蓝牙不可用", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "缺少蓝牙连接权限", Toast.LENGTH_SHORT).show();
-            return;
-        }
+            if (!bluetoothAdapter.isEnabled()) {
+                Toast.makeText(this, "请先开启蓝牙", Toast.LENGTH_SHORT).show();
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                if (ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                    enableBluetoothLauncher.launch(enableBtIntent);
+                }
+                return;
+            }
 
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-        if (pairedDevices.size() > 0) {
-            List<BluetoothDevice> deviceList = new ArrayList<>(pairedDevices);
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "缺少蓝牙连接权限", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-            // 确保在主线程中显示对话框
-            runOnUiThread(() -> {
-                BluetoothDeviceDialog dialog = new BluetoothDeviceDialog(
-                        MainActivity.this,
-                        deviceList,
-                        this::connectToDevice
-                );
-                dialog.setCancelable(false);
-                dialog.show();
-            });
-        } else {
-            Toast.makeText(this, "没有配对的蓝牙设备，请先配对设备", Toast.LENGTH_LONG).show();
-            Intent intent = new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
-            startActivity(intent);
+            Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+            if (pairedDevices != null && pairedDevices.size() > 0) {
+                List<BluetoothDevice> deviceList = new ArrayList<>(pairedDevices);
+
+                // 确保在主线程中显示对话框
+                if (!isFinishing() && !isDestroyed()) {
+                    runOnUiThread(() -> {
+                        try {
+                            BluetoothDeviceDialog dialog = new BluetoothDeviceDialog(
+                                    MainActivity.this,
+                                    deviceList,
+                                    this::connectToDevice
+                            );
+                            dialog.setCancelable(true);
+                            dialog.show();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(MainActivity.this,
+                                    "显示蓝牙设备列表失败: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } else {
+                Toast.makeText(this, "没有配对的蓝牙设备，请先配对设备", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+                startActivity(intent);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "蓝牙操作失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
