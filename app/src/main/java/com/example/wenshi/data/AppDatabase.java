@@ -10,6 +10,8 @@ import androidx.room.RoomDatabase;
 public abstract class AppDatabase extends RoomDatabase {
     public abstract TemperatureDao temperatureDao();
 
+    public abstract TodoDao todoDao();
+
     private static AppDatabase instance;
 
     public static synchronized AppDatabase getInstance(Context context) {

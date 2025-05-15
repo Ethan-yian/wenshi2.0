@@ -1,5 +1,8 @@
 package com.example.wenshi;
 
+
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import androidx.annotation.NonNull;
 import android.Manifest;
 import android.animation.ArgbEvaluator;
@@ -23,7 +26,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -48,6 +50,11 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
     private boolean permissionsGranted = false;
+
+    // 在现有成员变量下添加
+    private Button todoButton;
+    private CardView todoButtonContainer;
+    private boolean isTodoButtonVisible = false;
 
     private ActivityResultLauncher<Intent> enableBluetoothLauncher;
     private static final String TAG = "MainActivity";
@@ -139,17 +146,25 @@ public class MainActivity extends AppCompatActivity {
         weekdayText = findViewById(R.id.weekdayText);
         viewHistoryButton = findViewById(R.id.viewHistoryButton);
         historyButtonContainer = findViewById(R.id.historyButtonContainer);
+        todoButton = findViewById(R.id.todoButton);
+        todoButtonContainer = findViewById(R.id.todoButtonContainer);
 
-        // Set initial state of history button to invisible
+        // Set initial state of buttons to invisible
         historyButtonContainer.setVisibility(View.INVISIBLE);
         historyButtonContainer.setAlpha(0f);
         historyButtonContainer.setScaleX(0.8f);
         historyButtonContainer.setScaleY(0.8f);
         isHistoryButtonVisible = false;
 
+        todoButtonContainer.setVisibility(View.INVISIBLE);
+        todoButtonContainer.setAlpha(0f);
+        todoButtonContainer.setScaleX(0.8f);
+        todoButtonContainer.setScaleY(0.8f);
+        isTodoButtonVisible = false;
+
         // 设置整个界面的点击监听
         View rootView = findViewById(android.R.id.content);
-        rootView.setOnClickListener(v -> toggleHistoryButton());
+        rootView.setOnClickListener(v -> toggleButtons());
     }
 
     private void initializeComponents() {
@@ -196,52 +211,130 @@ public class MainActivity extends AppCompatActivity {
             }
             return false;
         });
-    }
 
-    private void toggleHistoryButton() {
-        if (isHistoryButtonVisible) {
-            hideHistoryButton();
-        } else {
-            showHistoryButton();
+        // 为待办事项按钮添加触摸动画效果
+        Button todoButton = findViewById(R.id.todoButton);
+        if (todoButton != null) {
+            todoButton.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.animate()
+                                .scaleX(0.95f)
+                                .scaleY(0.95f)
+                                .setDuration(100)
+                                .start();
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        v.animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .setDuration(100)
+                                .withEndAction(() -> {
+                                    Intent intent = new Intent(MainActivity.this, TodoActivity.class);
+                                    startActivity(intent);
+                                })
+                                .start();
+                        return true;
+
+                    case MotionEvent.ACTION_CANCEL:
+                        v.animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .setDuration(100)
+                                .start();
+                        return true;
+                }
+                return false;
+            });
         }
     }
 
-    private void showHistoryButton() {
-        // 移除之前的自动隐藏任务
-        handler.removeCallbacks(hideHistoryButtonRunnable);
+    private void toggleButtons() {
+        if (isHistoryButtonVisible) {
+            hideButtons();
+        } else {
+            showButtons();
+        }
+    }
 
+    private void showButtons() {
+        // 移除之前的自动隐藏任务
+        handler.removeCallbacks(hideButtonsRunnable);
+
+        // 设置两个按钮可见
         historyButtonContainer.setVisibility(View.VISIBLE);
-        historyButtonContainer.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(200)
-                .start();
+        todoButtonContainer.setVisibility(View.VISIBLE);
+
+        // 创建动画集合
+        AnimatorSet animatorSet = new AnimatorSet();
+
+        // 创建所有动画
+        ObjectAnimator historyAlpha = ObjectAnimator.ofFloat(historyButtonContainer, "alpha", 0f, 1f);
+        ObjectAnimator historyScaleX = ObjectAnimator.ofFloat(historyButtonContainer, "scaleX", 0.8f, 1f);
+        ObjectAnimator historyScaleY = ObjectAnimator.ofFloat(historyButtonContainer, "scaleY", 0.8f, 1f);
+
+        ObjectAnimator todoAlpha = ObjectAnimator.ofFloat(todoButtonContainer, "alpha", 0f, 1f);
+        ObjectAnimator todoScaleX = ObjectAnimator.ofFloat(todoButtonContainer, "scaleX", 0.8f, 1f);
+        ObjectAnimator todoScaleY = ObjectAnimator.ofFloat(todoButtonContainer, "scaleY", 0.8f, 1f);
+
+        // 设置所有动画同时播放
+        animatorSet.playTogether(
+                historyAlpha, historyScaleX, historyScaleY,
+                todoAlpha, todoScaleX, todoScaleY
+        );
+
+        animatorSet.setDuration(200);
+        animatorSet.start();
+
         isHistoryButtonVisible = true;
+        isTodoButtonVisible = true;
 
         // 5秒后自动隐藏
-        handler.postDelayed(hideHistoryButtonRunnable, HISTORY_BUTTON_AUTO_HIDE_DELAY);
+        handler.postDelayed(hideButtonsRunnable, HISTORY_BUTTON_AUTO_HIDE_DELAY);
     }
 
-    private final Runnable hideHistoryButtonRunnable = new Runnable() {
+    private void hideButtons() {
+        // 创建动画集合
+        AnimatorSet animatorSet = new AnimatorSet();
+
+        // 创建所有动画
+        ObjectAnimator historyAlpha = ObjectAnimator.ofFloat(historyButtonContainer, "alpha", 1f, 0f);
+        ObjectAnimator historyScaleX = ObjectAnimator.ofFloat(historyButtonContainer, "scaleX", 1f, 0.8f);
+        ObjectAnimator historyScaleY = ObjectAnimator.ofFloat(historyButtonContainer, "scaleY", 1f, 0.8f);
+
+        ObjectAnimator todoAlpha = ObjectAnimator.ofFloat(todoButtonContainer, "alpha", 1f, 0f);
+        ObjectAnimator todoScaleX = ObjectAnimator.ofFloat(todoButtonContainer, "scaleX", 1f, 0.8f);
+        ObjectAnimator todoScaleY = ObjectAnimator.ofFloat(todoButtonContainer, "scaleY", 1f, 0.8f);
+
+        // 设置所有动画同时播放
+        animatorSet.playTogether(
+                historyAlpha, historyScaleX, historyScaleY,
+                todoAlpha, todoScaleX, todoScaleY
+        );
+
+        animatorSet.setDuration(200);
+
+        // 使用动画监听器来处理动画结束后的操作
+        animatorSet.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                historyButtonContainer.setVisibility(View.INVISIBLE);
+                todoButtonContainer.setVisibility(View.INVISIBLE);
+                isHistoryButtonVisible = false;
+                isTodoButtonVisible = false;
+            }
+        });
+
+        animatorSet.start();
+    }
+
+    private final Runnable hideButtonsRunnable = new Runnable() {
         @Override
         public void run() {
-            hideHistoryButton();
+            hideButtons();
         }
     };
-
-    private void hideHistoryButton() {
-        historyButtonContainer.animate()
-                .alpha(0f)
-                .scaleX(0.8f)
-                .scaleY(0.8f)
-                .setDuration(200)
-                .withEndAction(() -> {
-                    historyButtonContainer.setVisibility(View.INVISIBLE);
-                    isHistoryButtonVisible = false;
-                })
-                .start();
-    }
 
     private void startTimeUpdate() {
         handler.post(new Runnable() {
